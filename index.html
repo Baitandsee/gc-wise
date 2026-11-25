@@ -263,7 +263,7 @@ function dayNoteCount(d){var n=0;jobs.forEach(function(j){if(!cur||j.name===cur)
 function pickJob(i){cur=i<0?null:jobs[i].name;sel=mid(today);noteDate=mid(today);go('sched')}
 function openNotes(){noteDate=sel;if(!cur){cur=jobs[0].name}go('notes')}
 function rHome(){
-  var h='<div style="margin:6px 0 16px"><div class="s">'+fmt(today)+'</div><div style="display:flex;align-items:center;gap:8px;margin-top:2px"><div style="font-size:28px;font-weight:800;line-height:1.15;overflow-wrap:anywhere">Welcome'+(gcName?', '+esc(gcName):'')+'</div><button class="x" style="color:var(--mut);opacity:.4;padding:6px 4px;line-height:1" onclick="askName()" aria-label="Edit name"><svg class="i" viewBox="0 0 24 24" style="width:13px;height:13px;stroke-width:1.8">'+ICO.edit+'</svg></button></div><div style="font-size:16px;color:var(--mut);margin-top:4px">Which job are you on?</div></div>';
+  var h='<div style="margin:6px 0 16px"><div class="s">'+fmt(today)+'</div><div style="display:flex;align-items:center;gap:8px;margin-top:2px"><div style="font-size:28px;font-weight:800;line-height:1.15;overflow-wrap:anywhere">Welcome'+(gcName?', '+esc(gcName):'')+'</div><button class="x" style="color:var(--blu);padding:6px 4px;line-height:1" onclick="askName()" aria-label="Edit name"><svg class="i" viewBox="0 0 24 24" style="width:15px;height:15px;stroke-width:2">'+ICO.edit+'</svg></button></div><div style="font-size:16px;color:var(--mut);margin-top:4px">Which job are you on?</div></div>';
   jobs.forEach(function(j,i){
     var ts=tasks.filter(function(t){return t.job===j.name}),done=ts.filter(function(t){return mid(endD(t))<today}).length,
     tod=ts.filter(function(t){return onDay(t,today)}).length,
