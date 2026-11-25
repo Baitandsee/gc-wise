@@ -87,6 +87,10 @@ textarea{width:100%;background:var(--bg);border:1px solid var(--line);color:var(
 .dl{font-size:11px;color:var(--mut);margin:5px 0 0 6px}
 .i{width:1.15em;height:1.15em;vertical-align:-.2em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .alert .ic .i{width:22px;height:22px}
+.pills{display:flex;gap:6px;overflow-x:auto;margin:10px 0 4px;padding-bottom:2px;scrollbar-width:none}
+.pills::-webkit-scrollbar{display:none}
+.pill2{flex:none;border:1px solid var(--line);background:var(--card);color:var(--mut);border-radius:99px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;-webkit-appearance:none;appearance:none}
+.pill2.on{background:var(--org);color:#06203a;border-color:var(--org)}
 </style>
 </head>
 <body>
@@ -101,9 +105,7 @@ textarea{width:100%;background:var(--bg);border:1px solid var(--line);color:var(
 
 <div class="tabs"><div>
   <button id="t-home" class="on" onclick="go('home')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</button>
-  <button id="t-sched" onclick="go('sched')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="17" rx="3"/><path d="M16 2.5v4M8 2.5v4M3 10h18"/></svg>Schedule</button>
-  <button id="t-notes" onclick="go('notes')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>Notes</button>
-  <button id="t-client" onclick="go('client')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10" cy="8" r="3.5"/><path d="m16.5 10.5 2 2 3.5-4"/></svg>Client</button>
+  <button id="t-job" onclick="goJob()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Job</button>
   <button id="t-subs" onclick="go('subs')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-6A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10.5" cy="8" r="3.5"/><path d="M20 20v-1.5a3.5 3.5 0 0 0-2.5-3.3M15.5 4.7a3.5 3.5 0 0 1 0 6.6"/></svg>Subs</button>
 </div></div>
 
@@ -192,16 +194,18 @@ function sub(id){return subs.filter(function(s){return s.id===id})[0]}
 function endD(t){return addD(t.start,t.days-1)}
 function onDay(t,d){return mid(d)>=mid(t.start)&&mid(d)<=mid(endD(t))}
 function scol(n){return n>=90?['#12382a','#34c47c']:n>=75?['#3e3212','#f2b632']:['#41191c','#ef5d5d']}
-function insInfo(s){var n=Math.round((s.ins-today)/DAY);
+function insInfo(s){if(!s.ins)return{c:'b',t:'Add insurance date',n:null};var n=Math.round((s.ins-today)/DAY);
   if(n<0)return{c:'r',t:'Insurance expired '+(-n)+'d ago',n:n};
   if(n<=30)return{c:'a',t:'Insurance expires in '+n+'d',n:n};
   return{c:'g',t:'Insured ✓',n:n}}
 function toast(m){var e=document.getElementById('toast');e.textContent=m;e.className='toast show';clearTimeout(e._t);e._t=setTimeout(function(){e.className='toast'},2600)}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 
-function go(v){view=v;['home','sched','notes','client','subs'].forEach(function(k){document.getElementById('t-'+k).className=k===v?'on':''});render();window.scrollTo(0,0)}
+var lastJob=null;
+function go(v){view=v;if(v==='sched'||v==='notes'||v==='client'||v==='punch'||v==='photos')lastJob=v;var tab=v==='home'?'home':v==='subs'?'subs':v==='alerts'?'':'job';['home','job','subs'].forEach(function(k){document.getElementById('t-'+k).className=k===tab?'on':''});render();window.scrollTo(0,0)}
+function goJob(){if(!cur&&!lastJob){go('home');return}go(lastJob||'sched')}
 function render(){
-  document.getElementById('view').innerHTML=deemoji(view==='home'?rHome():view==='sched'?jobBar()+rSched():view==='notes'?jobBar()+rNotes():view==='client'?jobBar()+rClient():view==='subs'?rSubs():jobBar()+rAlerts());
+  document.getElementById('view').innerHTML=deemoji(view==='home'?rHome():view==='sched'?jobBar()+pills()+rSched():view==='notes'?jobBar()+pills()+rNotes():view==='client'?jobBar()+pills()+rClient():view==='punch'?jobBar()+pills()+rPunch():view==='photos'?jobBar()+pills()+rPhotos():view==='subs'?rSubs():jobBar()+rAlerts());
   var n=alerts().length,b=document.getElementById('bd');b.textContent=n||'';b.style.display=n?'block':'none'
 }
 
@@ -214,10 +218,11 @@ function rSched(){
   if(!ts.length)h+='<div class="empty">Nothing scheduled this day.</div>';
   ts.forEach(function(t){
     var s=t.sub?sub(t.sub):null,st=t.status==='confirmed'?['g','Confirmed']:t.status==='declined'?['r','Can’t make it']:['a','Waiting'];
-    h+='<div class="card '+t.status+'"><div class="row"><div><div class="t">'+esc(t.title)+'</div><div class="s">'+(cur?'':esc(t.job)+' · ')+t.days+' day'+(t.days>1?'s':'')+'</div><div class="s">'+(s?'👷 '+esc(s.name)+' · '+esc(s.trade):(t.insp?'🔍 County inspector':'🔨 Own crew'))+'</div></div><span class="chip '+st[0]+'">'+(t.sub||t.insp?st[1]:'Own crew')+'</span></div>';
+    h+='<div class="card '+t.status+'"><div class="row"><div><div class="t">'+esc(t.title)+'</div><div class="s">'+(cur?'':esc(t.job)+' · ')+t.days+' day'+(t.days>1?'s':'')+'</div><div class="s">'+(s?'👷 '+esc(s.name)+' · '+esc(s.trade):(t.trade?'👷 Needs a '+esc(t.trade)+' sub':(t.insp?'🔍 County inspector':'🔨 Own crew')))+'</div></div><span class="chip '+((!t.sub&&t.trade)?'a':st[0])+'">'+(!t.sub&&t.trade?'Needs sub':(t.sub||t.insp?st[1]:'Own crew'))+'</span></div>';
     if(t.ext&&same(sel,rainDay))h+='<div class="s" style="color:var(--amb);margin-top:6px">🌧 Rain forecast, exterior work at risk</div>';
     h+='<div class="acts">';
     if(t.sub&&t.status!=='confirmed')h+='<button class="btn sm pri" onclick="sendText('+t.id+')">📲 Text sub to confirm</button>';
+    if(!t.sub&&t.trade)h+='<button class="btn sm pri" onclick="assignSub('+t.id+')">Assign sub</button>';
     h+='<button class="btn sm" onclick="slip('+t.id+',1)">Push +1 day</button><button class="btn sm" onclick="slip('+t.id+',2)">+2 days</button></div></div>'});
   h+=gantt();
   return h}
@@ -233,13 +238,13 @@ function gantt(){
   return h+'</div>'}
 
 function rSubs(){
-  var h='<div class="nav"><b>Subcontractors</b><button class="btn pri" onclick="addSub()">+ Sub</button></div><input id="q" placeholder="Search name or trade" oninput="filt()">';
+  var h='<div class="nav"><b>Subcontractors</b><div style="display:flex;gap:6px"><button class="btn" onclick="importSubs()">Import</button><button class="btn pri" onclick="addSub()">+ Sub</button></div></div><input id="q" placeholder="Search name or trade" oninput="filt()">';
   h+='<div id="sl">'+subList('')+'</div>';return h}
 function subList(q){
   q=q.toLowerCase();
   return subs.filter(function(s){return !q||(s.name+s.trade).toLowerCase().indexOf(q)>-1}).map(function(s){
-    var c=scol(s.score),i=insInfo(s),nt=tasks.filter(function(t){return t.sub===s.id&&mid(endD(t))>=today}).length;
-    return '<div class="card" style="border-color:'+c[1]+'"><div class="row"><div style="display:flex;gap:11px"><div class="sc" style="background:'+c[0]+';color:'+c[1]+'">'+s.score+'</div><div><div class="t">'+esc(s.name)+'</div><div class="s">'+esc(s.trade)+' · '+esc(s.contact)+'</div><div class="s">'+esc(s.phone)+'</div></div></div><span class="chip '+i.c+'">'+i.t+'</span></div><div class="s" style="margin-top:8px">On-time score '+s.score+'% · '+nt+' upcoming job'+(nt===1?'':'s')+'</div></div>'}).join('')||'<div class="empty">No subs match.</div>'}
+    var c=s.score==null?['#1a4573','#9dbbd8']:scol(s.score),i=insInfo(s),nt=tasks.filter(function(t){return t.sub===s.id&&mid(endD(t))>=today}).length;
+    return '<div class="card" style="border-color:'+c[1]+';cursor:pointer" onclick="editSub('+s.id+')"><div class="row"><div style="display:flex;gap:11px"><div class="sc" style="background:'+c[0]+';color:'+c[1]+'">'+(s.score==null?'New':s.score)+'</div><div><div class="t">'+esc(s.name)+'</div><div class="s">'+esc(s.trade)+' · '+esc(s.contact)+'</div><div class="s">'+esc(s.phone)+'</div></div></div><span class="chip '+i.c+'">'+i.t+'</span></div><div class="s" style="margin-top:8px">'+(s.score==null?'No history yet':'On-time score '+s.score+'%')+' · '+nt+' upcoming job'+(nt===1?'':'s')+'</div></div>'}).join('')||'<div class="empty">No subs match.</div>'}
 function filt(){document.getElementById('sl').innerHTML=subList(document.getElementById('q').value)}
 
 function alerts(){
@@ -247,6 +252,7 @@ function alerts(){
   subs.forEach(function(s){var i=insInfo(s);if(i.c==='r')a.push({ic:'⛔',c:'r',t:s.name+': insurance expired',d:'Expired '+(-i.n)+' days ago. Get a new certificate before they work on site.'});else if(i.c==='a')a.push({ic:'📄',c:'a',t:s.name+': insurance expires soon',d:'Expires in '+i.n+' days. Ask for a renewed certificate.'})});
   ft().forEach(function(t){var n=Math.round((mid(t.start)-today)/DAY);
     if(t.sub&&t.status!=='confirmed'&&n>=0&&n<=3)a.push({ic:'📲',c:'a',t:t.title+' not confirmed',d:sub(t.sub).name+' starts '+fmt(t.start)+'. Send a confirm text.'});
+    if(!t.sub&&t.trade&&n>=0&&n<=7)a.push({ic:'👷',c:'a',t:'Assign a '+t.trade+' sub',d:t.title+' starts '+fmt(t.start)+'.'});
     if(t.status==='declined')a.push({ic:'❌',c:'r',t:t.title+': sub can’t make it',d:'Push the date or find a replacement.'});
     if(t.ext&&onDay(t,rainDay))a.push({ic:'🌧',c:'a',t:'Rain on '+fmt(rainDay),d:t.title+' is exterior work.'});
     if(t.insp&&n>=0&&n<=10)a.push({ic:'🔍',c:'b',t:t.title+' in '+n+' days',d:'Make sure rough work is done by '+fmt(addD(t.start,-1))+'.'})});
@@ -268,13 +274,11 @@ function rHome(){
     var ts=tasks.filter(function(t){return t.job===j.name}),done=ts.filter(function(t){return mid(endD(t))<today}).length,
     tod=ts.filter(function(t){return onDay(t,today)}).length,
     nx=ts.filter(function(t){return mid(t.start)>today}).sort(function(a,b){return a.start-b.start})[0],
-    un=ts.filter(function(t){return t.sub&&t.status!=='confirmed'}).length,
+    un=ts.filter(function(t){return t.sub&&t.status!=='confirmed'}).length,ns=ts.filter(function(t){return !t.sub&&t.trade}).length,
     nn=(notes[nk(j.name,today)]||[]).length,pc=ts.length?Math.round(done/ts.length*100):0;
-    h+='<div class="jobc" onclick="pickJob('+i+')"><div class="row"><div><div class="t" style="font-size:17px">'+esc(j.name)+'</div><div class="s">📍 '+esc(j.addr)+'</div></div><span style="color:var(--org);font-size:22px">›</span></div><div class="pg"><div style="width:'+pc+'%"></div></div><div class="s">'+pc+'% of tasks done · '+tod+' on site today</div>'+(nx?'<div class="s" style="margin-top:3px">Next: '+esc(nx.title)+' · '+fmt(nx.start)+'</div>':'')+'<div class="jc">'+(un?'<span class="chip a">'+un+' unconfirmed</span>':'<span class="chip g">All confirmed</span>')+(wq(j.name)?'<span class="chip a">❓ '+wq(j.name)+' for client</span>':'')+'<span class="chip b">📝 '+nn+' note'+(nn===1?'':'s')+' today</span></div></div>'});
+    h+='<div class="jobc" onclick="pickJob('+i+')"><div class="row"><div><div class="t" style="font-size:17px">'+esc(j.name)+'</div><div class="s">📍 '+esc(j.addr)+'</div></div><span style="color:var(--org);font-size:22px">›</span></div><div class="pg"><div style="width:'+pc+'%"></div></div><div class="s">'+pc+'% of tasks done · '+tod+' on site today</div>'+(nx?'<div class="s" style="margin-top:3px">Next: '+esc(nx.title)+' · '+fmt(nx.start)+'</div>':'')+'<div class="jc">'+(ns?'<span class="chip a">'+ns+' need subs</span>':'')+(un?'<span class="chip a">'+un+' unconfirmed</span>':'<span class="chip g">All confirmed</span>')+(wq(j.name)?'<span class="chip a">❓ '+wq(j.name)+' for client</span>':'')+'<span class="chip b">📝 '+nn+' note'+(nn===1?'':'s')+' today</span></div></div>'});
   h+='<div class="jobc" onclick="pickJob(-1)"><div class="t">📋 All jobs</div><div class="s">See every job on one calendar</div></div><button class="btn" style="width:100%;padding:13px" onclick="addJob()">+ New job</button>';
   return h}
-function addJob(){openM('<h3>New job</h3><label>Job name</label><input id="jn" placeholder="e.g. Smith Bathroom Remodel"><label>Address</label><input id="ja"><label>Client email</label><input id="je" placeholder="client@email.com"><div class="acts"><button class="btn pri" onclick="saveJob()">Create</button><button class="btn" onclick="closeM()">Cancel</button></div>')}
-function saveJob(){var n=document.getElementById('jn').value.trim();if(!n){toast('Enter a job name');return}jobs.push({name:n,addr:document.getElementById('ja').value||'No address yet',client:'there',email:document.getElementById('je').value||'',slug:n.toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,14)+'-'+(1000+jobs.length*37)});closeM();toast('Job created');render()}
 
 function rNotes(){
   if(!cur)return '<div class="empty">Pick a job first.</div>';
@@ -369,6 +373,9 @@ function previewClient(){
   var h='<div class="pill" style="display:inline-block;margin-bottom:10px">👁 What your client sees</div><h3 style="font-size:20px">'+esc(j.name)+'</h3><div class="s">📍 '+esc(j.addr)+'</div><div style="font-size:30px;font-weight:800;margin-top:10px">'+pc+'% complete</div><div class="pg"><div style="width:'+pc+'%"></div></div>';
   h+='<h2>Timeline</h2>'+ts.map(function(t){var d=mid(endD(t))<today,now=onDay(t,today);return'<div class="s" style="padding:5px 0;color:var(--tx)">'+(d?'✅':now?'🔨':'⏳')+' '+esc(t.title)+' <span style="color:var(--mut)">· '+(d?'done':now?'in progress':fmt(t.start))+'</span></div>'}).join('');
   if(sn.length){h+='<h2>Updates from your builder</h2>';sn.slice(0,4).forEach(function(x){h+='<div class="nt"><div class="s">'+fmt(x.d)+'</div><p>'+esc(x.n.text)+'</p></div>'})}
+  var pp=punch.filter(function(p){return p.job===cur}),sp=photos.filter(function(p){return p.job===cur&&p.shared}).slice(0,6);
+  if(sp.length)h+='<h2>Recent photos</h2><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">'+sp.map(function(p){return'<img src="'+p.src+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;display:block" alt="">'}).join('')+'</div>';
+  if(pp.length)h+='<h2>Final touch-ups</h2><div class="s" style="color:var(--tx)">'+pp.filter(function(p){return p.done}).length+' of '+pp.length+' items done</div>';
   h+='<h2>Needs your answer</h2>';
   if(!oq.length)h+='<div class="empty" style="padding:10px 0">Nothing needed right now 👍</div>';
   oq.forEach(function(q){h+='<div class="card pending"><div class="t" style="font-size:14px">'+esc(q.text)+'</div><div class="s" style="margin:4px 0 8px">Please answer by '+fmt(q.due)+'</div>'+(q.choices?'<div class="acts">'+q.choices.map(function(c,i){return'<button class="btn pri sm" onclick="cAns('+q.id+','+i+')">'+esc(c)+'</button>'}).join('')+'</div>':'<textarea id="ca'+q.id+'" style="min-height:60px" placeholder="Type your answer"></textarea><button class="btn pri sm" onclick="cAnsT('+q.id+')">Send answer</button>')+'</div>'});
@@ -380,6 +387,75 @@ function cAnsT(id){var v=document.getElementById('ca'+id).value.trim();if(!v){to
 function askName(){
   openM('<h3>'+(gcName?'Edit your name':'Welcome to GC Wise')+'</h3><div class="s" style="margin-bottom:10px">What should we call you? Your name or company shows at the top and on updates to your clients.</div><input id="gn" placeholder="e.g. Mike or Rutherford Builders" maxlength="40" value="'+esc(gcName)+'"><div class="acts"><button class="btn pri" style="flex:1" onclick="saveName()">Save</button><button class="btn" onclick="closeM()">'+(gcName?'Cancel':'Skip')+'</button></div>')}
 function saveName(){gcName=document.getElementById('gn').value.trim();try{localStorage.setItem('gcwise-gcname',gcName)}catch(e){}closeM();render()}
+
+var punch=[],photos=[],phTag='All',punchDraft={text:'',room:'Kitchen',sub:''},pendingPh=null,photoWarned=false;
+var ROOMS=['Kitchen','Bathroom','Living room','Bedroom','Exterior','Garage','Other'];
+var PTAGS=['Progress','Issue','Delivery','Punch list','Inspection'];
+try{punch=JSON.parse(localStorage.getItem('gcwise-punch')||'[]')}catch(e){punch=[]}
+try{photos=JSON.parse(localStorage.getItem('gcwise-photos')||'[]')}catch(e){photos=[]}
+if(!punch.length)punch=[
+ {id:90,job:'Miller Kitchen Remodel',text:'Touch up paint behind the fridge',room:'Kitchen',sub:null,done:false,photo:null},
+ {id:91,job:'Miller Kitchen Remodel',text:'Fix drip under the sink',room:'Kitchen',sub:3,done:false,photo:null},
+ {id:92,job:'Miller Kitchen Remodel',text:'Patch drywall nick by the doorway',room:'Living room',sub:4,done:true,photo:null},
+ {id:93,job:'Oak St New Build',text:'Chip at garage slab corner',room:'Garage',sub:7,done:false,photo:null},
+ {id:94,job:'Oak St New Build',text:'Mark stud locations for pantry shelves',room:'Kitchen',sub:null,done:false,photo:null}];
+function savePunch(){try{localStorage.setItem('gcwise-punch',JSON.stringify(punch))}catch(e){}}
+function savePhotos(){try{localStorage.setItem('gcwise-photos',JSON.stringify(photos.slice(0,40)))}catch(e){if(!photoWarned){photoWarned=true;toast('Storage is full. Older photos may not be kept.')}}}
+function ph(id){return photos.filter(function(x){return x.id===id})[0]}
+function pcount(){var op=punch.filter(function(p){return(!cur||p.job===cur)&&!p.done}).length,np=photos.filter(function(p){return !cur||p.job===cur}).length;return{op:op,np:np}}
+function pills(){var c=pcount(),S=[['sched','Schedule',''],['notes','Notes',''],['punch','Punch list',c.op||''],['photos','Photos',c.np||''],['client','Client','']];
+  return '<div class="pills">'+S.map(function(x){return'<button class="pill2'+(view===x[0]?' on':'')+'" onclick="go(\''+x[0]+'\')">'+x[1]+(x[2]?' <span style="opacity:.7">'+x[2]+'</span>':'')+'</button>'}).join('')+'</div>'}
+function needJob(w){return '<div class="empty" style="padding:18px 0 10px">Pick a job to see its '+w+'.</div>'+jobs.map(function(j,i){return'<button class="btn" style="width:100%;margin-bottom:8px;padding:12px" onclick="setJob('+i+')">'+esc(j.name)+'</button>'}).join('')}
+function setJob(i){cur=jobs[i].name;render()}
+
+function rPunch(){
+  if(!cur)return needJob('punch list');
+  var items=punch.filter(function(p){return p.job===cur}),open=items.filter(function(p){return !p.done}),dn=items.filter(function(p){return p.done}),pc=items.length?Math.round(dn.length/items.length*100):0;
+  var h='<div class="card" style="border-color:var(--org);margin-top:10px"><div class="row"><div><div class="s">Punch list</div><div style="font-size:26px;font-weight:800">'+dn.length+' of '+items.length+' done</div></div><button class="btn sm" onclick="sendPunchMenu()">📲 Send to subs</button></div><div class="pg"><div style="width:'+pc+'%"></div></div></div>';
+  h+='<div class="card" style="border-color:var(--line)"><input id="pt" placeholder="Add an item, e.g. Touch up paint behind fridge" value="'+esc(punchDraft.text)+'" oninput="punchDraft.text=this.value" onkeydown="if(event.key===\'Enter\')addPunch()"><div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px"><select id="pr" onchange="punchDraft.room=this.value">'+ROOMS.map(function(r){return'<option'+(r===punchDraft.room?' selected':'')+'>'+r+'</option>'}).join('')+'</select><select id="pa" onchange="punchDraft.sub=this.value"><option value="">Assign to</option>'+subs.map(function(x){return'<option value="'+x.id+'"'+(String(x.id)===String(punchDraft.sub)?' selected':'')+'>'+esc(x.name)+'</option>'}).join('')+'</select></div><div class="acts"><button class="btn pri" style="flex:1" onclick="addPunch()">Add item</button><label class="btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">📷'+(pendingPh?' Photo attached':'')+'<input type="file" accept="image/*" capture="environment" style="display:none" onchange="punchPhoto(this)"></label></div></div>';
+  if(!open.length)h+='<div class="empty">'+(items.length?'Everything is done.':'No punch items yet.')+'</div>';
+  ROOMS.filter(function(r){return open.some(function(p){return p.room===r})}).forEach(function(r){h+='<h2>'+r+'</h2>';open.filter(function(p){return p.room===r}).forEach(function(p){h+=punchRow(p)})});
+  if(dn.length){h+='<h2>Completed ('+dn.length+')</h2>';dn.forEach(function(p){h+=punchRow(p)})}
+  return h}
+function punchRow(p){var x=p.sub?sub(p.sub):null,pp=p.photo?ph(p.photo):null;
+  return '<div class="nt" style="display:flex;gap:11px;align-items:center"><button onclick="togglePunch('+p.id+')" aria-label="Toggle done" style="flex:none;width:28px;height:28px;border-radius:50%;border:2px solid '+(p.done?'var(--grn)':'var(--line)')+';background:'+(p.done?'var(--grn)':'transparent')+';color:#06203a;display:grid;place-items:center;cursor:pointer;padding:0;-webkit-appearance:none;appearance:none">'+(p.done?'✓':'')+'</button><div style="flex:1;min-width:0;cursor:pointer" onclick="editPunch('+p.id+')"><div style="font-size:14px;line-height:1.4;'+(p.done?'text-decoration:line-through;color:var(--mut)':'')+'">'+esc(p.text)+'</div><div class="s">'+(x?esc(x.name):'Unassigned')+'</div></div>'+(pp?'<img src="'+pp.src+'" onclick="openPhoto('+pp.id+')" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex:none;cursor:pointer" alt="">':'')+'</div>'}
+function addPunch(){var t=punchDraft.text.trim();if(!t){toast('Type what needs fixing');return}
+  punch.unshift({id:nextId++,job:cur,text:t,room:punchDraft.room,sub:punchDraft.sub?+punchDraft.sub:null,done:false,photo:pendingPh});
+  punchDraft.text='';pendingPh=null;savePunch();render();var e=document.getElementById('pt');if(e)e.focus()}
+function togglePunch(id){var p=punch.filter(function(x){return x.id===id})[0];p.done=!p.done;savePunch();render()}
+function editPunch(id){var p=punch.filter(function(x){return x.id===id})[0];
+  openM('<h3>Edit item</h3><input id="ex" value="'+esc(p.text)+'"><select id="er">'+ROOMS.map(function(r){return'<option'+(r===p.room?' selected':'')+'>'+r+'</option>'}).join('')+'</select><select id="es"><option value="">Unassigned</option>'+subs.map(function(x){return'<option value="'+x.id+'"'+(x.id===p.sub?' selected':'')+'>'+esc(x.name)+'</option>'}).join('')+'</select><div class="acts"><button class="btn pri" style="flex:1" onclick="savePunchEdit('+id+')">Save</button><button class="btn" onclick="delPunch('+id+')">Delete</button></div>')}
+function savePunchEdit(id){var p=punch.filter(function(x){return x.id===id})[0],t=document.getElementById('ex').value.trim();if(!t){toast('Item cannot be empty');return}
+  p.text=t;p.room=document.getElementById('er').value;var v=document.getElementById('es').value;p.sub=v?+v:null;savePunch();closeM();render()}
+function delPunch(id){punch=punch.filter(function(x){return x.id!==id});savePunch();closeM();render()}
+function punchPhoto(inp){var f=inp.files[0];inp.value='';readPhoto(f,function(src){var p={id:nextId++,job:cur,src:src,t:Date.now(),tag:'Punch list',cap:'',shared:false};photos.unshift(p);savePhotos();pendingPh=p.id;render()})}
+function sendPunchMenu(){
+  var open=punch.filter(function(p){return p.job===cur&&!p.done&&p.sub}),ids=[];open.forEach(function(p){if(ids.indexOf(p.sub)<0)ids.push(p.sub)});
+  var un=punch.filter(function(p){return p.job===cur&&!p.done&&!p.sub}).length;
+  if(!ids.length){toast('Assign open items to subs first');return}
+  openM('<h3>Send punch list</h3><div class="s" style="margin-bottom:10px">Each sub only gets their own items.</div>'+ids.map(function(id){var x=sub(id),n=open.filter(function(p){return p.sub===id}).length;return'<div class="card" style="border-color:var(--line)"><div class="row"><div><div class="t">'+esc(x.name)+'</div><div class="s">'+n+' open item'+(n===1?'':'s')+'</div></div><button class="btn sm pri" onclick="punchPreview('+id+')">Preview text</button></div></div>'}).join('')+(un?'<div class="s">'+un+' open item'+(un===1?' has':'s have')+' no sub yet.</div>':'')+'<div class="acts"><button class="btn" style="width:100%" onclick="closeM()">Close</button></div>')}
+function punchPreview(id){
+  var x=sub(id),its=punch.filter(function(p){return p.job===cur&&!p.done&&p.sub===id}),
+  m='Hi '+(x.contact&&x.contact!=='—'?x.contact:x.name)+', '+(gcName?gcName+' here. ':'')+'punch list items for '+cur+':\n\n'+its.map(function(p,i){return(i+1)+'. '+p.text+' ('+p.room+')'}).join('\n')+'\n\nReply when these are done.';
+  openM('<h3>Text to '+esc(x.name)+'</h3><div class="phone"><div class="hd">Text message<b>To: '+esc(x.name)+'</b></div><div class="sms" style="background:var(--blu);color:#06203a;border-radius:18px 18px 4px 18px;margin-left:auto">'+esc(m)+'</div><div class="dl" style="text-align:right">Preview</div></div><div class="acts"><button class="btn pri" style="flex:1" onclick="doPunchSend('+id+')">📲 Send text</button><button class="btn" onclick="sendPunchMenu()">Back</button></div>')}
+function doPunchSend(id){closeM();toast('Punch list texted to '+sub(id).name)}
+
+function readPhoto(f,cb){if(!f)return;var r=new FileReader();r.onload=function(e){var im=new Image();im.onload=function(){var k=Math.min(1,900/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.65))};im.onerror=function(){toast('Could not read that photo')};im.src=e.target.result};r.readAsDataURL(f)}
+function addPhotos(inp){var fs=[].slice.call(inp.files);inp.value='';fs.forEach(function(f){readPhoto(f,function(src){photos.unshift({id:nextId++,job:cur,src:src,t:Date.now(),tag:phTag==='All'?'Progress':phTag,cap:'',shared:false});savePhotos();render()})})}
+function rPhotos(){
+  if(!cur)return needJob('photos');
+  var all=photos.filter(function(p){return p.job===cur}),list=all.filter(function(p){return phTag==='All'||p.tag===phTag});
+  var h='<div class="nav"><b>'+all.length+' photo'+(all.length===1?'':'s')+'</b><label class="btn pri" style="cursor:pointer">+ Add photos<input type="file" accept="image/*" multiple style="display:none" onchange="addPhotos(this)"></label></div>';
+  h+='<div class="tg">'+['All'].concat(PTAGS).map(function(t){return'<button class="'+(phTag===t?'on':'')+'" onclick="phTag=\''+t+'\';render()">'+t+'</button>'}).join('')+'</div>';
+  if(!list.length)return h+'<div class="empty">'+(all.length?'No photos with that tag.':'No photos yet. Tap Add photos to take or pick pictures. They are saved to this job by date.')+'</div>';
+  var days=[];list.forEach(function(p){var k=dk(new Date(p.t)),g=days.filter(function(d){return d.k===k})[0];if(!g){g={k:k,t:p.t,items:[]};days.push(g)}g.items.push(p)});
+  days.forEach(function(g){h+='<h2>'+fmt(new Date(g.t))+'</h2><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">'+g.items.map(function(p){return'<div style="position:relative;cursor:pointer" onclick="openPhoto('+p.id+')"><img src="'+p.src+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;display:block" alt="'+esc(p.cap||p.tag)+'">'+(p.shared?'<span class="chip g" style="position:absolute;right:5px;top:5px;padding:3px 5px">👁</span>':'')+'</div>'}).join('')+'</div>'});
+  return h}
+function openPhoto(id){var p=ph(id);if(!p)return;
+  openM('<img src="'+p.src+'" style="width:100%;max-height:50vh;object-fit:contain;border-radius:12px;background:#000;margin-bottom:10px" alt=""><div class="s" style="margin-bottom:8px">'+fmt(new Date(p.t))+' · '+esc(p.job)+'</div><input placeholder="Add a caption" value="'+esc(p.cap)+'" oninput="ph('+id+').cap=this.value;savePhotos()"><select onchange="ph('+id+').tag=this.value;savePhotos();render()">'+PTAGS.map(function(t){return'<option'+(t===p.tag?' selected':'')+'>'+t+'</option>'}).join('')+'</select><div class="acts"><button class="btn'+(p.shared?' pri':'')+'" onclick="sharePhoto('+id+')">👁 '+(p.shared?'Shared with client':'Share with client')+'</button><button class="btn" onclick="photoToPunch('+id+')">Add to punch list</button><button class="btn" onclick="delPhoto('+id+')">Delete</button></div><div class="acts"><button class="btn" style="width:100%" onclick="closeM();render()">Done</button></div>')}
+function sharePhoto(id){var p=ph(id);p.shared=!p.shared;savePhotos();render();openPhoto(id)}
+function photoToPunch(id){var p=ph(id);punch.unshift({id:nextId++,job:p.job,text:p.cap||'Fix needed (see photo)',room:'Other',sub:null,done:false,photo:id});p.tag='Punch list';savePunch();savePhotos();closeM();toast('Added to the punch list. Tap it to set the room.');render()}
+function delPhoto(id){photos=photos.filter(function(x){return x.id!==id});punch.forEach(function(x){if(x.photo===id)x.photo=null});savePunch();savePhotos();closeM();render()}
 
 function wk(n){weekStart=addD(weekStart,n);render()}
 function pick(ms){sel=new Date(ms);render()}
@@ -403,12 +479,79 @@ function saveTask(){
   var sid=document.getElementById('ns').value;
   tasks.push({id:nextId++,job:document.getElementById('nj').value,title:ti,sub:sid?+sid:null,start:sel,days:Math.max(1,+document.getElementById('nd').value||1),status:sid?'pending':'confirmed',dep:null,ext:false,insp:false});
   closeM();toast('Task added');render()}
+function iso(d){d=mid(d);var m=d.getMonth()+1,dd=d.getDate();return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd}
+function fromIso(v){if(!v)return null;var p=v.split('-');return new Date(+p[0],+p[1]-1,+p[2])}
 function addSub(){
-  openM('<h3>New subcontractor</h3><label>Company</label><input id="sn"><label>Trade</label><input id="st" placeholder="e.g. Tile"><label>Contact name</label><input id="sc"><label>Phone</label><input id="sp" placeholder="(850) 555-0000"><div class="acts"><button class="btn pri" onclick="saveSub()">Save</button><button class="btn" onclick="closeM()">Cancel</button></div>')}
+  openM('<h3>New subcontractor</h3><label>Company or name</label><input id="sn"><label>Trade</label><input id="st" placeholder="e.g. Tile"><label>Phone</label><input id="sp" type="tel" placeholder="(850) 555-0000"><label>Contact name (optional)</label><input id="sc"><div class="acts"><button class="btn pri" style="flex:1" onclick="saveSub()">Save</button><button class="btn" onclick="closeM()">Cancel</button></div><div class="s" style="margin-top:14px;text-align:center">Adding a lot? <a href="#" style="color:var(--blu)" onclick="importSubs();return false">Import many at once</a></div>')}
 function saveSub(){
-  var n=document.getElementById('sn').value.trim();if(!n){toast('Enter a company name');return}
-  subs.push({id:nextId++,name:n,trade:document.getElementById('st').value||'General',contact:document.getElementById('sc').value||'—',phone:document.getElementById('sp').value||'—',score:100,ins:addD(today,365)});
+  var n=document.getElementById('sn').value.trim();if(!n){toast('Enter a name');return}
+  subs.push({id:nextId++,name:n,trade:document.getElementById('st').value.trim()||'General',contact:document.getElementById('sc').value.trim()||'—',phone:document.getElementById('sp').value.trim()||'—',score:null,ins:null});
   closeM();toast('Sub added');render()}
+function importSubs(){
+  var can=!!(navigator.contacts&&navigator.contacts.select);
+  openM('<h3>Import subs</h3>'+(can?'<button class="btn pri" style="width:100%;padding:12px;margin-bottom:6px" onclick="importContacts()">Choose from phone contacts</button><div class="s" style="text-align:center;margin-bottom:12px">or paste a list below</div>':'<div class="s" style="margin-bottom:8px">Paste your list. One sub per line: name, trade, phone. Trade and phone are optional. You can paste straight from a spreadsheet.</div>')+'<textarea id="pl" style="min-height:130px" placeholder="Smith Framing, Framing, 850-555-0142&#10;Gulf Electric, Electrical, 850-555-0188"></textarea><div class="acts"><button class="btn pri" style="flex:1" onclick="savePaste()">Add subs</button><button class="btn" onclick="closeM()">Cancel</button></div>')}
+function savePaste(){
+  var n=0;document.getElementById('pl').value.split(/\n/).forEach(function(line){
+    var m=line.match(/\(?\d{3}\)?[\s.\-]*\d{3}[\s.\-]*\d{4}/),ph=m?m[0].trim():'',
+    f=(m?line.replace(m[0],''):line).split(/[,\t|]/).map(function(x){return x.trim()}).filter(Boolean);
+    if(!f[0])return;
+    subs.push({id:nextId++,name:f[0],trade:f[1]||'General',contact:'—',phone:ph||'—',score:null,ins:null});n++});
+  if(!n){toast('Nothing to add yet');return}
+  closeM();toast(n+' sub'+(n===1?'':'s')+' added. Tap one to fix its trade or add insurance.');render()}
+function importContacts(){
+  navigator.contacts.select(['name','tel'],{multiple:true}).then(function(l){
+    var n=0;l.forEach(function(c){var nm=(c.name&&c.name[0])||'';if(!nm)return;subs.push({id:nextId++,name:nm,trade:'General',contact:'—',phone:(c.tel&&c.tel[0])||'—',score:null,ins:null});n++});
+    closeM();toast(n+' imported. Tap a sub to set its trade.');render()}).catch(function(){toast('Contacts not available here. Paste a list instead.')})}
+function editSub(id){
+  var x=sub(id);
+  openM('<h3>Edit sub</h3><label>Company or name</label><input id="en" value="'+esc(x.name)+'"><label>Trade</label><input id="et" value="'+esc(x.trade)+'"><label>Phone</label><input id="ep" type="tel" value="'+esc(x.phone)+'"><label>Contact name</label><input id="ec" value="'+esc(x.contact)+'"><label>Insurance expires</label><input id="ei" type="date" value="'+(x.ins?iso(x.ins):'')+'"><div class="acts"><button class="btn pri" style="flex:1" onclick="saveEdit('+id+')">Save</button><button class="btn" onclick="closeM()">Cancel</button></div>')}
+function saveEdit(id){
+  var x=sub(id),n=document.getElementById('en').value.trim();if(!n){toast('Enter a name');return}
+  x.name=n;x.trade=document.getElementById('et').value.trim()||'General';x.phone=document.getElementById('ep').value.trim()||'—';x.contact=document.getElementById('ec').value.trim()||'—';x.ins=fromIso(document.getElementById('ei').value);
+  closeM();toast('Saved');render()}
+function assignSub(id){
+  var t=tk(id),tr=t.trade.toLowerCase(),m=subs.filter(function(x){return x.trade.toLowerCase()===tr}),o=subs.filter(function(x){return m.indexOf(x)<0}),
+  op=function(x){return'<option value="'+x.id+'">'+esc(x.name)+'</option>'};
+  openM('<h3>Assign a sub</h3><div class="s" style="margin-bottom:10px">'+esc(t.title)+' · needs '+esc(t.trade)+'</div><select id="as"><option value="">Choose a sub</option>'+(m.length?'<optgroup label="'+esc(t.trade)+'">'+m.map(op).join('')+'</optgroup>':'')+(o.length?'<optgroup label="Other subs">'+o.map(op).join('')+'</optgroup>':'')+'</select><button class="btn pri" style="width:100%;margin-bottom:8px" onclick="doAssign('+id+')">Assign</button><h2>Not in your list yet?</h2><label>Name or company</label><input id="qn"><label>Phone</label><input id="qp" type="tel" placeholder="(850) 555-0000"><button class="btn" style="width:100%" onclick="quickAssign('+id+')">Add and assign</button>')}
+function doAssign(id){var v=document.getElementById('as').value;if(!v){toast('Choose a sub');return}var t=tk(id);t.sub=+v;t.status='pending';closeM();toast('Assigned to '+sub(t.sub).name+'. Text them to confirm.');render()}
+function quickAssign(id){
+  var t=tk(id),n=document.getElementById('qn').value.trim();if(!n){toast('Enter a name');return}
+  var x={id:nextId++,name:n,trade:t.trade,contact:'—',phone:document.getElementById('qp').value.trim()||'—',score:null,ins:null};subs.push(x);t.sub=x.id;t.status='pending';closeM();toast(n+' added and assigned.');render()}
+
+var TEMPLATES={
+ home:{name:'New home build',tasks:[
+  ['Site prep and clearing',2,'Excavation',null,1],['Pour slab',2,'Concrete',0,1],['Frame walls',7,'Framing',1,1],['Roof dry-in',3,'Roofing',2,1],
+  ['Windows and exterior doors',2,'Carpentry',3,1],['Rough electrical',3,'Electrical',4],['Rough plumbing',3,'Plumbing',4],['Rough HVAC',3,'HVAC',4],
+  ['Rough-in inspection',1,'!insp',7],['Insulation',2,'Insulation',8],['Drywall',6,'Drywall',9],['Paint',4,'Painting',10],
+  ['Cabinets and trim',5,'Carpentry',11],['Flooring',4,'Flooring',12],['Finish electrical, plumbing, HVAC',3,'Electrical',13],['Final inspection',1,'!insp',14]]},
+ kitchen:{name:'Kitchen remodel',tasks:[
+  ['Demo and haul off',1,null,null],['Move plumbing and gas lines',1,'Plumbing',0],['Rough electrical',2,'Electrical',0],['Rough-in inspection',1,'!insp',2],
+  ['Drywall',3,'Drywall',3],['Paint',2,'Painting',4],['Cabinets',3,'Carpentry',5],['Countertops',2,'Countertops',6],['Backsplash',2,'Tile',7],
+  ['Flooring',2,'Flooring',8],['Finish plumbing and electrical',1,'Plumbing',9],['Punch list',1,null,10]]},
+ bath:{name:'Bathroom remodel',tasks:[
+  ['Demo and haul off',1,null,null],['Rough plumbing',2,'Plumbing',0],['Rough electrical',1,'Electrical',0],['Waterproofing and backer board',2,'Tile',1],
+  ['Tile',3,'Tile',3],['Vanity, toilet, fixtures',1,'Plumbing',4],['Paint',1,'Painting',5],['Punch list',1,null,6]]},
+ deck:{name:'Deck build',tasks:[
+  ['Permit and layout',1,null,null],['Footings',1,'Concrete',0,1],['Framing',2,'Framing',1,1],['Decking',2,'Carpentry',2,1],
+  ['Railing and stairs',2,'Carpentry',3,1],['Final inspection',1,'!insp',4]]}
+};
+function buildJob(jobName,tpl,start){
+  var T=TEMPLATES[tpl];if(!T)return 0;var made=[];
+  T.tasks.forEach(function(r){
+    var d=r[3]==null?mid(start):addD(made[r[3]].start,made[r[3]].days),insp=r[2]==='!insp',trade=(insp||!r[2])?null:r[2],
+    m=trade?subs.filter(function(x){return x.trade.toLowerCase()===trade.toLowerCase()})[0]:null,
+    t={id:nextId++,job:jobName,title:r[0],sub:m?m.id:null,trade:trade,start:d,days:r[1],status:(trade||insp)?'pending':'confirmed',dep:r[3]==null?null:made[r[3]].id,ext:!!r[4],insp:insp};
+    made.push(t);tasks.push(t)});
+  return made.length}
+function addJob(){
+  var o='<option value="">Start from scratch</option>'+Object.keys(TEMPLATES).map(function(k){return'<option value="'+k+'">'+esc(TEMPLATES[k].name)+' ('+TEMPLATES[k].tasks.length+' tasks)</option>'}).join('');
+  openM('<h3>New job</h3><label>Job name</label><input id="jn" placeholder="e.g. Smith Bathroom Remodel"><label>Address</label><input id="ja"><label>Client name</label><input id="jc" placeholder="e.g. Tom and Beth"><label>Client email</label><input id="je" type="email" placeholder="client@email.com"><label>Template</label><select id="jt">'+o+'</select><label>Start date</label><input id="jd" type="date" value="'+iso(today)+'"><div class="s" style="margin:0 0 10px">A template fills in the whole task list in order. You just assign subs.</div><div class="acts"><button class="btn pri" style="flex:1" onclick="saveJob()">Create job</button><button class="btn" onclick="closeM()">Cancel</button></div>')}
+function saveJob(){
+  var n=document.getElementById('jn').value.trim();if(!n){toast('Enter a job name');return}
+  var st=fromIso(document.getElementById('jd').value)||today,tp=document.getElementById('jt').value;
+  jobs.push({name:n,addr:document.getElementById('ja').value.trim()||'No address yet',client:document.getElementById('jc').value.trim()||'there',email:document.getElementById('je').value.trim(),slug:n.toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,14)+'-'+(1000+jobs.length*37)});
+  var c=tp?buildJob(n,tp,st):0;closeM();
+  if(c){cur=n;sel=mid(st);weekStart=addD(sel,-sel.getDay());toast('Job created with '+c+' tasks. Assign subs to get going.');go('sched')}else{toast('Job created');render()}}
 render();
 if(!gcName)askName();
 </script>
