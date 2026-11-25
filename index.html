@@ -238,7 +238,7 @@ function gantt(){
   return h+'</div>'}
 
 function rSubs(){
-  var h='<div class="nav"><b>Subcontractors</b><div style="display:flex;gap:6px"><button class="btn" onclick="importSubs()">Import</button><button class="btn pri" onclick="addSub()">+ Sub</button></div></div><input id="q" placeholder="Search name or trade" oninput="filt()">';
+  var h='<div class="nav"><b>Subcontractors'+(pro()?'':' <span class="s" style="font-weight:600">'+subs.length+' of '+LIM.subs+'</span>')+'</b><div style="display:flex;gap:6px"><button class="btn" onclick="importSubs()">Import</button><button class="btn pri" onclick="addSub()">+ Sub</button></div></div><input id="q" placeholder="Search name or trade" oninput="filt()">';
   h+='<div id="sl">'+subList('')+'</div>';return h}
 function subList(q){
   q=q.toLowerCase();
@@ -270,6 +270,7 @@ function pickJob(i){cur=i<0?null:jobs[i].name;sel=mid(today);noteDate=mid(today)
 function openNotes(){noteDate=sel;if(!cur){cur=jobs[0].name}go('notes')}
 function rHome(){
   var h='<div style="margin:6px 0 16px"><div class="s">'+fmt(today)+'</div><div style="display:flex;align-items:center;gap:8px;margin-top:2px"><div style="font-size:28px;font-weight:800;line-height:1.15;overflow-wrap:anywhere">Welcome'+(gcName?', '+esc(gcName):'')+'</div><button class="x" style="background:none;border:0;outline:0;box-shadow:none;-webkit-appearance:none;appearance:none;color:var(--blu);padding:6px 4px;line-height:1;cursor:pointer" onclick="askName()" aria-label="Edit name"><svg class="i" viewBox="0 0 24 24" style="width:15px;height:15px;stroke-width:2">'+ICO.edit+'</svg></button></div><div style="font-size:16px;color:var(--mut);margin-top:4px">Which job are you on?</div></div>';
+  var __pc=planCard();
   jobs.forEach(function(j,i){
     var ts=tasks.filter(function(t){return t.job===j.name}),done=ts.filter(function(t){return mid(endD(t))<today}).length,
     tod=ts.filter(function(t){return onDay(t,today)}).length,
@@ -278,6 +279,7 @@ function rHome(){
     nn=(notes[nk(j.name,today)]||[]).length,pc=ts.length?Math.round(done/ts.length*100):0;
     h+='<div class="jobc" onclick="pickJob('+i+')"><div class="row"><div><div class="t" style="font-size:17px">'+esc(j.name)+'</div><div class="s">📍 '+esc(j.addr)+'</div></div><span style="color:var(--org);font-size:22px">›</span></div><div class="pg"><div style="width:'+pc+'%"></div></div><div class="s">'+pc+'% of tasks done · '+tod+' on site today</div>'+(nx?'<div class="s" style="margin-top:3px">Next: '+esc(nx.title)+' · '+fmt(nx.start)+'</div>':'')+'<div class="jc">'+(ns?'<span class="chip a">'+ns+' need subs</span>':'')+(un?'<span class="chip a">'+un+' unconfirmed</span>':'<span class="chip g">All confirmed</span>')+(wq(j.name)?'<span class="chip a">❓ '+wq(j.name)+' for client</span>':'')+'<span class="chip b">📝 '+nn+' note'+(nn===1?'':'s')+' today</span></div></div>'});
   h+='<div class="jobc" onclick="pickJob(-1)"><div class="t">📋 All jobs</div><div class="s">See every job on one calendar</div></div><button class="btn" style="width:100%;padding:13px" onclick="addJob()">+ New job</button>';
+  h+=__pc;
   return h}
 
 function rNotes(){
@@ -428,7 +430,7 @@ function editPunch(id){var p=punch.filter(function(x){return x.id===id})[0];
 function savePunchEdit(id){var p=punch.filter(function(x){return x.id===id})[0],t=document.getElementById('ex').value.trim();if(!t){toast('Item cannot be empty');return}
   p.text=t;p.room=document.getElementById('er').value;var v=document.getElementById('es').value;p.sub=v?+v:null;savePunch();closeM();render()}
 function delPunch(id){punch=punch.filter(function(x){return x.id!==id});savePunch();closeM();render()}
-function punchPhoto(inp){var f=inp.files[0];inp.value='';readPhoto(f,function(src){var p={id:nextId++,job:cur,src:src,t:Date.now(),tag:'Punch list',cap:'',shared:false};photos.unshift(p);savePhotos();pendingPh=p.id;render()})}
+function punchPhoto(inp){var f=inp.files[0];inp.value='';if(!gate('photos'))return;readPhoto(f,function(src){var p={id:nextId++,job:cur,src:src,t:Date.now(),tag:'Punch list',cap:'',shared:false};photos.unshift(p);savePhotos();pendingPh=p.id;render()})}
 function sendPunchMenu(){
   var open=punch.filter(function(p){return p.job===cur&&!p.done&&p.sub}),ids=[];open.forEach(function(p){if(ids.indexOf(p.sub)<0)ids.push(p.sub)});
   var un=punch.filter(function(p){return p.job===cur&&!p.done&&!p.sub}).length;
@@ -441,11 +443,11 @@ function punchPreview(id){
 function doPunchSend(id){closeM();toast('Punch list texted to '+sub(id).name)}
 
 function readPhoto(f,cb){if(!f)return;var r=new FileReader();r.onload=function(e){var im=new Image();im.onload=function(){var k=Math.min(1,900/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.65))};im.onerror=function(){toast('Could not read that photo')};im.src=e.target.result};r.readAsDataURL(f)}
-function addPhotos(inp){var fs=[].slice.call(inp.files);inp.value='';fs.forEach(function(f){readPhoto(f,function(src){photos.unshift({id:nextId++,job:cur,src:src,t:Date.now(),tag:phTag==='All'?'Progress':phTag,cap:'',shared:false});savePhotos();render()})})}
+function addPhotos(inp){var fs=[].slice.call(inp.files);inp.value='';var room=left('photos');if(room<1){upgrade('photos');return}if(fs.length>room){fs=fs.slice(0,room);upgrade('photos')}fs.forEach(function(f){readPhoto(f,function(src){photos.unshift({id:nextId++,job:cur,src:src,t:Date.now(),tag:phTag==='All'?'Progress':phTag,cap:'',shared:false});savePhotos();render()})})}
 function rPhotos(){
   if(!cur)return needJob('photos');
   var all=photos.filter(function(p){return p.job===cur}),list=all.filter(function(p){return phTag==='All'||p.tag===phTag});
-  var h='<div class="nav"><b>'+all.length+' photo'+(all.length===1?'':'s')+'</b><label class="btn pri" style="cursor:pointer">+ Add photos<input type="file" accept="image/*" multiple style="display:none" onchange="addPhotos(this)"></label></div>';
+  var h='<div class="nav"><b>'+all.length+(pro()?'':' of '+LIM.photos)+' photo'+(all.length===1&&pro()?'':'s')+'</b><label class="btn pri" style="cursor:pointer">+ Add photos<input type="file" accept="image/*" multiple style="display:none" onchange="addPhotos(this)"></label></div>';
   h+='<div class="tg">'+['All'].concat(PTAGS).map(function(t){return'<button class="'+(phTag===t?'on':'')+'" onclick="phTag=\''+t+'\';render()">'+t+'</button>'}).join('')+'</div>';
   if(!list.length)return h+'<div class="empty">'+(all.length?'No photos with that tag.':'No photos yet. Tap Add photos to take or pick pictures. They are saved to this job by date.')+'</div>';
   var days=[];list.forEach(function(p){var k=dk(new Date(p.t)),g=days.filter(function(d){return d.k===k})[0];if(!g){g={k:k,t:p.t,items:[]};days.push(g)}g.items.push(p)});
@@ -456,6 +458,21 @@ function openPhoto(id){var p=ph(id);if(!p)return;
 function sharePhoto(id){var p=ph(id);p.shared=!p.shared;savePhotos();render();openPhoto(id)}
 function photoToPunch(id){var p=ph(id);punch.unshift({id:nextId++,job:p.job,text:p.cap||'Fix needed (see photo)',room:'Other',sub:null,done:false,photo:id});p.tag='Punch list';savePunch();savePhotos();closeM();toast('Added to the punch list. Tap it to set the room.');render()}
 function delPhoto(id){photos=photos.filter(function(x){return x.id!==id});punch.forEach(function(x){if(x.photo===id)x.photo=null});savePunch();savePhotos();closeM();render()}
+
+var LIM={jobs:1,subs:5,photos:10},plan='free';
+try{plan=localStorage.getItem('gcwise-plan')==='pro'?'pro':'free'}catch(e){}
+function pro(){return plan==='pro'}
+function setPlan(p){plan=p;try{localStorage.setItem('gcwise-plan',p)}catch(e){}closeM();toast(p==='pro'?'Pro preview on. No limits.':'Back on the Free plan.');render()}
+function pcnt(){return cur?photos.filter(function(p){return p.job===cur}).length:0}
+function left(kind){if(pro())return 999;return Math.max(0,LIM[kind]-(kind==='jobs'?jobs.length:kind==='subs'?subs.length:pcnt()))}
+var UPW={jobs:['You have reached the free limit of 1 project','Pro lets you run as many jobs as you have going.'],subs:['You have reached the free limit of 5 subs','Pro gives you your whole contact list.'],photos:['This project has reached the free limit of 10 photos','Pro stores unlimited photos for every project.']};
+function upgrade(kind){
+  var w=UPW[kind]||['Go Pro','Everything unlocked.'];
+  openM('<h3>'+w[0]+'</h3><div class="s" style="margin-bottom:12px">'+w[1]+'</div><div class="card" style="border-color:var(--org)"><div class="t" style="font-size:18px">GC Wise Pro</div><div class="s" style="margin:2px 0 10px">Example price: $12 a month</div>'+['Unlimited projects, subs and photos','Client portal with email and text updates','Cloud sync on phone, tablet and computer','Backup when you change phones','Text punch lists to subs','Sub insurance expiry alerts'].map(function(x){return'<div style="display:flex;gap:8px;margin:5px 0;font-size:14px"><span style="color:var(--org)">✓</span><span>'+x+'</span></div>'}).join('')+'</div><div class="acts"><button class="btn pri" style="flex:1" onclick="setPlan(\'pro\')">Preview Pro</button><button class="btn" onclick="closeM()">Not now</button></div><div class="s" style="text-align:center;margin-top:10px">Prototype only. No payment happens here.</div>')}
+function gate(kind,n){if(left(kind)>=(n||1))return true;upgrade(kind);return false}
+function planCard(){
+  var u=function(l,n,m){var f=pro()?'∞':n+' of '+m,over=!pro()&&n>=m;return'<div class="row" style="margin:6px 0"><div class="s">'+l+'</div><div style="font-size:13px;font-weight:700;'+(over?'color:var(--org)':'')+'">'+f+'</div></div>'};
+  return '<div class="card" style="border-color:var(--line);margin-top:14px"><div class="row"><div><div class="s">Your plan</div><div style="font-size:18px;font-weight:800">'+(pro()?'Pro (preview)':'Free')+'</div></div>'+(pro()?'<button class="btn sm" onclick="setPlan(\'free\')">Back to Free</button>':'<button class="btn sm pri" onclick="upgrade()">Go Pro</button>')+'</div>'+u('Projects',jobs.length,LIM.jobs)+u('Subs',subs.length,LIM.subs)+(cur?u('Photos in this project',pcnt(),LIM.photos):'')+'</div>'}
 
 function wk(n){weekStart=addD(weekStart,n);render()}
 function pick(ms){sel=new Date(ms);render()}
@@ -482,26 +499,30 @@ function saveTask(){
 function iso(d){d=mid(d);var m=d.getMonth()+1,dd=d.getDate();return d.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(dd<10?'0':'')+dd}
 function fromIso(v){if(!v)return null;var p=v.split('-');return new Date(+p[0],+p[1]-1,+p[2])}
 function addSub(){
+  if(!gate('subs'))return;
   openM('<h3>New subcontractor</h3><label>Company or name</label><input id="sn"><label>Trade</label><input id="st" placeholder="e.g. Tile"><label>Phone</label><input id="sp" type="tel" placeholder="(850) 555-0000"><label>Contact name (optional)</label><input id="sc"><div class="acts"><button class="btn pri" style="flex:1" onclick="saveSub()">Save</button><button class="btn" onclick="closeM()">Cancel</button></div><div class="s" style="margin-top:14px;text-align:center">Adding a lot? <a href="#" style="color:var(--blu)" onclick="importSubs();return false">Import many at once</a></div>')}
 function saveSub(){
+  if(!gate('subs'))return;
   var n=document.getElementById('sn').value.trim();if(!n){toast('Enter a name');return}
   subs.push({id:nextId++,name:n,trade:document.getElementById('st').value.trim()||'General',contact:document.getElementById('sc').value.trim()||'—',phone:document.getElementById('sp').value.trim()||'—',score:null,ins:null});
   closeM();toast('Sub added');render()}
 function importSubs(){
+  if(!gate('subs'))return;
   var can=!!(navigator.contacts&&navigator.contacts.select);
   openM('<h3>Import subs</h3>'+(can?'<button class="btn pri" style="width:100%;padding:12px;margin-bottom:6px" onclick="importContacts()">Choose from phone contacts</button><div class="s" style="text-align:center;margin-bottom:12px">or paste a list below</div>':'<div class="s" style="margin-bottom:8px">Paste your list. One sub per line: name, trade, phone. Trade and phone are optional. You can paste straight from a spreadsheet.</div>')+'<textarea id="pl" style="min-height:130px" placeholder="Smith Framing, Framing, 850-555-0142&#10;Gulf Electric, Electrical, 850-555-0188"></textarea><div class="acts"><button class="btn pri" style="flex:1" onclick="savePaste()">Add subs</button><button class="btn" onclick="closeM()">Cancel</button></div>')}
 function savePaste(){
-  var n=0;document.getElementById('pl').value.split(/\n/).forEach(function(line){
+  var n=0,cap=left('subs'),skip=0;document.getElementById('pl').value.split(/\n/).forEach(function(line){
     var m=line.match(/\(?\d{3}\)?[\s.\-]*\d{3}[\s.\-]*\d{4}/),ph=m?m[0].trim():'',
     f=(m?line.replace(m[0],''):line).split(/[,\t|]/).map(function(x){return x.trim()}).filter(Boolean);
     if(!f[0])return;
+    if(n>=cap){skip++;return}
     subs.push({id:nextId++,name:f[0],trade:f[1]||'General',contact:'—',phone:ph||'—',score:null,ins:null});n++});
-  if(!n){toast('Nothing to add yet');return}
-  closeM();toast(n+' sub'+(n===1?'':'s')+' added. Tap one to fix its trade or add insurance.');render()}
+  if(!n){if(skip){upgrade('subs');return}toast('Nothing to add yet');return}
+  closeM();if(skip){upgrade('subs');setTimeout(function(){toast(n+' added. '+skip+' left out (free limit).')},50)}else toast(n+' sub'+(n===1?'':'s')+' added. Tap one to fix its trade or add insurance.');render()}
 function importContacts(){
   navigator.contacts.select(['name','tel'],{multiple:true}).then(function(l){
-    var n=0;l.forEach(function(c){var nm=(c.name&&c.name[0])||'';if(!nm)return;subs.push({id:nextId++,name:nm,trade:'General',contact:'—',phone:(c.tel&&c.tel[0])||'—',score:null,ins:null});n++});
-    closeM();toast(n+' imported. Tap a sub to set its trade.');render()}).catch(function(){toast('Contacts not available here. Paste a list instead.')})}
+    var n=0,cap=left('subs'),skip=0;l.forEach(function(c){var nm=(c.name&&c.name[0])||'';if(!nm)return;if(n>=cap){skip++;return}subs.push({id:nextId++,name:nm,trade:'General',contact:'—',phone:(c.tel&&c.tel[0])||'—',score:null,ins:null});n++});
+    closeM();if(skip){upgrade('subs');setTimeout(function(){toast(n+' imported. '+skip+' left out (free limit).')},50)}else toast(n+' imported. Tap a sub to set its trade.');render()}).catch(function(){toast('Contacts not available here. Paste a list instead.')})}
 function editSub(id){
   var x=sub(id);
   openM('<h3>Edit sub</h3><label>Company or name</label><input id="en" value="'+esc(x.name)+'"><label>Trade</label><input id="et" value="'+esc(x.trade)+'"><label>Phone</label><input id="ep" type="tel" value="'+esc(x.phone)+'"><label>Contact name</label><input id="ec" value="'+esc(x.contact)+'"><label>Insurance expires</label><input id="ei" type="date" value="'+(x.ins?iso(x.ins):'')+'"><div class="acts"><button class="btn pri" style="flex:1" onclick="saveEdit('+id+')">Save</button><button class="btn" onclick="closeM()">Cancel</button></div>')}
@@ -515,6 +536,7 @@ function assignSub(id){
   openM('<h3>Assign a sub</h3><div class="s" style="margin-bottom:10px">'+esc(t.title)+' · needs '+esc(t.trade)+'</div><select id="as"><option value="">Choose a sub</option>'+(m.length?'<optgroup label="'+esc(t.trade)+'">'+m.map(op).join('')+'</optgroup>':'')+(o.length?'<optgroup label="Other subs">'+o.map(op).join('')+'</optgroup>':'')+'</select><button class="btn pri" style="width:100%;margin-bottom:8px" onclick="doAssign('+id+')">Assign</button><h2>Not in your list yet?</h2><label>Name or company</label><input id="qn"><label>Phone</label><input id="qp" type="tel" placeholder="(850) 555-0000"><button class="btn" style="width:100%" onclick="quickAssign('+id+')">Add and assign</button>')}
 function doAssign(id){var v=document.getElementById('as').value;if(!v){toast('Choose a sub');return}var t=tk(id);t.sub=+v;t.status='pending';closeM();toast('Assigned to '+sub(t.sub).name+'. Text them to confirm.');render()}
 function quickAssign(id){
+  if(!gate('subs'))return;
   var t=tk(id),n=document.getElementById('qn').value.trim();if(!n){toast('Enter a name');return}
   var x={id:nextId++,name:n,trade:t.trade,contact:'—',phone:document.getElementById('qp').value.trim()||'—',score:null,ins:null};subs.push(x);t.sub=x.id;t.status='pending';closeM();toast(n+' added and assigned.');render()}
 
@@ -544,6 +566,7 @@ function buildJob(jobName,tpl,start){
     made.push(t);tasks.push(t)});
   return made.length}
 function addJob(){
+  if(!gate('jobs'))return;
   var o='<option value="">Start from scratch</option>'+Object.keys(TEMPLATES).map(function(k){return'<option value="'+k+'">'+esc(TEMPLATES[k].name)+' ('+TEMPLATES[k].tasks.length+' tasks)</option>'}).join('');
   openM('<h3>New job</h3><label>Job name</label><input id="jn" placeholder="e.g. Smith Bathroom Remodel"><label>Address</label><input id="ja"><label>Client name</label><input id="jc" placeholder="e.g. Tom and Beth"><label>Client email</label><input id="je" type="email" placeholder="client@email.com"><label>Template</label><select id="jt">'+o+'</select><label>Start date</label><input id="jd" type="date" value="'+iso(today)+'"><div class="s" style="margin:0 0 10px">A template fills in the whole task list in order. You just assign subs.</div><div class="acts"><button class="btn pri" style="flex:1" onclick="saveJob()">Create job</button><button class="btn" onclick="closeM()">Cancel</button></div>')}
 function saveJob(){
